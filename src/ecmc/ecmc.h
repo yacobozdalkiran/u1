@@ -8,8 +8,6 @@
 #include "../geometry/geometry.h"
 
 struct ECMCParams {
-    double beta = 6.0;
-    int N_samples = 10;
     double theta_sample = 100;
     double theta_refresh = 50;
     bool use_topological_lifting = false;
@@ -98,5 +96,5 @@ std::pair<std::pair<int, int>, int> lift_topological(const GaugeField& field, co
 
 void update(GaugeField& field, int site, int mu, double theta, int epsilon);
 int random_site(const Geometry& geo, std::mt19937_64& rng);
-void ecmc_sample(LocalChainState& state, GaugeField& field, Distributions& d, const Geometry& geo,
+void ecmc_sample(LocalChainState& state, GaugeField& field, double beta, Distributions& d, const Geometry& geo,
                  const ECMCParams& params, std::mt19937_64& rng);

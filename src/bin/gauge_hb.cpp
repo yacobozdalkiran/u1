@@ -19,16 +19,22 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    SimulationParameters params;
-    if (!read_input_file(argv[1], params)) {
+    HBSimulationParameters params;
+    if (!read_input_file_simparams(argv[1], params.sim_params)) {
+        return 1;
+    }
+    if (!read_input_file_hbparams(argv[1], params.hb_params)) {
         return 1;
     }
 
-    print_parameters(params);
+    SimulationParameters sim_params = params.sim_params;
+    HBParams hbparams = params.hb_params;
 
-    Geometry geo(params.L);
+    print_parameters_sim(params.sim_params);
+
+    Geometry geo(sim_params.L);
     GaugeField field(geo);
-    std::mt19937_64 rng(params.seed);
+    std::mt19937_64 rng(sim_params.seed);
     field.cold_start();
 
     std::vector<double> plaquettes;
@@ -36,7 +42,7 @@ int main(int argc, char* argv[]) {
     std::vector<double> susceptibilities;
 
     int start_iter = 0;
-    std::string base_path = params.output_dir + "/" + params.name + "/" + params.name + "_";
+    std::string base_path = sim_params.output_dir + "/" + sim_params.name + "/" + sim_params.name + "_";
     std::string cp_info_path = base_path + "checkpoint_info.txt";
     std::string cp_config_path = base_path + "checkpoint_config.txt";
     std::string cp_rng_path = base_path + "checkpoint_rng.txt";
@@ -66,17 +72,17 @@ int main(int argc, char* argv[]) {
         write_vector_to_file(res_susc_path, {}, false);
     }
 
-    int target_iter = start_iter + params.n_updates;
+    int target_iter = start_iter + sim_params.n_updates;
     std::cout << "Target total configurations : " << target_iter << "\n\n";
 
-    plaquettes.reserve(params.save_each);
-    charges.reserve(params.save_each);
-    susceptibilities.reserve(params.save_each);
+    plaquettes.reserve(sim_params.save_each);
+    charges.reserve(sim_params.save_each);
+    susceptibilities.reserve(sim_params.save_each);
 
     std::cout << std::fixed << std::setprecision(6);
     for (int i = start_iter + 1; i <= target_iter; ++i) {
         std::cout << "========== Configuration " << i << "/" << target_iter << " ==========\n";
-        heatbath_update(field, geo, params.beta, rng);
+        heatbath_update(field, geo, sim_params.beta, rng, hbparams);
         
         double plaq = average_plaquette(field, geo);
         double Q = topological_charge(field, geo);
@@ -90,7 +96,7 @@ int main(int argc, char* argv[]) {
             std::cout << "<P> = " << plaq << " | Q=" << Q << "\n";
         }
 
-        if (i % params.save_each == 0) {
+        if (i % sim_params.save_each == 0) {
             save_configuration(cp_config_path, field, geo);
             save_rng_state(cp_rng_path, rng);
             save_checkpoint_info(cp_info_path, i);

@@ -106,6 +106,38 @@ bool read_input_file_ecmcparams(const std::string& filename, ECMCParams& params)
     return true;
 }
 
+bool read_input_file_hbparams(const std::string& filename, HBParams& params) {
+    std::ifstream infile(filename);
+    if (!infile.is_open()) {
+        std::cerr << "Error: Could not open input file " << filename << std::endl;
+        return false;
+    }
+
+    std::string line;
+    bool has_n_hit = false;
+    bool has_n_sweep = false;
+
+    while (std::getline(infile, line)) {
+        std::istringstream iss(line);
+        std::string key;
+        if (!(iss >> key)) continue;
+
+        if (key == "n_hit") {
+            if (iss >> params.n_hit) has_n_hit = true;
+        } else if (key == "n_sweep") {
+            if (iss >> params.n_sweep) has_n_sweep = true;
+        } else if (key == "use_topological_lifting") {
+        }
+    }
+
+    if (!has_n_hit || !has_n_sweep) {
+        std::cerr << "Error: Missing parameters in input file. Need n_sweep, n_hit." << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
 bool write_vector_to_file(const std::string& filename, const std::vector<double>& data,
                           bool append) {
     fs::path filepath(filename);
@@ -233,20 +265,22 @@ bool load_ecmc_state(const std::string& filename, LocalChainState& state) {
     }
     return true;
 }
-void print_parameters(const SimulationParameters& sim_params) {
-    std::cout << "--- ECMC Simulation Parameters ---\n";
-    std::cout << "L             : " << sim_params.L << "\n";
-    std::cout << "Beta          : " << sim_params.beta << "\n";
-    std::cout << "Updates (Sweeps): " << sim_params.n_updates << "\n";
-    std::cout << "Theta Sample  : " << sim_params.ecmc_params.theta_sample << "\n";
-    std::cout << "Theta Refresh : " << sim_params.ecmc_params.theta_refresh << "\n";
-    std::cout << "Topo Lifting  : "
-              << (sim_params.ecmc_params.use_topological_lifting ? "YES" : "NO") << "\n";
-    if (sim_params.ecmc_params.use_topological_lifting)
-        std::cout << "Eta           : " << sim_params.ecmc_params.eta << "\n";
-    std::cout << "Seed          : " << sim_params.seed << "\n";
-    std::cout << "Save Every    : " << sim_params.save_each << "\n";
-    std::cout << "Name          : " << sim_params.name << "\n";
-    std::cout << "Output Dir    : " << sim_params.output_dir << "/" << sim_params.name << "\n";
+void print_parameters_sim(const SimulationParameters& sim_params) {
+    std::cout << "--- Simulation Parameters ---\n";
+    std::cout << "L                 : " << sim_params.L << "\n";
+    std::cout << "Beta              : " << sim_params.beta << "\n";
+    std::cout << "Updates (Sweeps)  : " << sim_params.n_updates << "\n";
+    std::cout << "Seed              : " << sim_params.seed << "\n";
+    std::cout << "Plaq. meas every  : " << sim_params.plaq_each << "\n";
+    std::cout << "Topo. meas every  : " << sim_params.topo_each << "\n";
+    std::cout << "Save Every        : " << sim_params.save_each << "\n";
+    std::cout << "Name              : " << sim_params.name << "\n";
+    std::cout << "Output Dir        : " << sim_params.output_dir << "/" << sim_params.name << "\n";
+    std::cout << "----------------------------------\n\n";
+}
+void print_parameters_ecmc(const ECMCParams& ecmc_params) {
+    std::cout << "--- ECMC Parameters ---\n";
+    std::cout << "Theta sample  : " << ecmc_params.theta_sample << "\n";
+    std::cout << "Theta refresh : " << ecmc_params.theta_refresh<< "\n";
     std::cout << "----------------------------------\n\n";
 }

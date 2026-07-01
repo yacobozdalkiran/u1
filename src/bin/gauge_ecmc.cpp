@@ -19,34 +19,33 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    SimulationParameters sim_params;
+    ECMCSimulationParameters params;
 
-    if (!read_input_file_simparams(argv[1], sim_params)) {
+    if (!read_input_file_simparams(argv[1], params.sim_params)) {
         std::cerr << "Error : could not read simulation params from inputs.\n";
         return 1;
     }
 
-    if (!read_input_file_ecmcparams(argv[1], sim_params.ecmc_params)){
+    if (!read_input_file_ecmcparams(argv[1], params.ecmc_params)) {
         std::cerr << "Error : could not read ecmc params from inputs.\n";
         return 1;
     }
 
     // Vérification explicite pour ECMC
-    if (sim_params.ecmc_params.theta_sample <= 0.0 || sim_params.ecmc_params.theta_refresh <= 0.0) {
+    if (params.ecmc_params.theta_sample <= 0.0 || params.ecmc_params.theta_refresh <= 0.0) {
         std::cerr << "Error: ECMC requires 'theta_sample' and 'theta_refresh' to be defined in the "
                      "input file and positive.\n";
         return 1;
     }
 
-    print_parameters(sim_params);
+    SimulationParameters sim_params = params.sim_params;
+    ECMCParams ecmc_params = params.ecmc_params;
 
+    print_parameters_sim(sim_params);
     Geometry geo(sim_params.L);
     GaugeField field(geo);
     std::mt19937_64 rng(sim_params.seed);
     field.cold_start();
-
-
-    ECMCParams ecmc_params = sim_params.ecmc_params;
 
     Distributions dists(ecmc_params);
     LocalChainState state;
@@ -111,9 +110,9 @@ int main(int argc, char* argv[]) {
     std::cout << std::fixed << std::setprecision(6);
     for (int i = start_iter + 1; i <= target_iter; ++i) {
         std::cout << "========== Configuration " << i << "/" << target_iter << " ==========\n";
-        ecmc_sample(state, field, dists, geo, ecmc_params, rng);
+        ecmc_sample(state, field, sim_params.beta, dists, geo, ecmc_params, rng);
 
-        double lambda = sim_params.ecmc_params.theta_sample / static_cast<double>(state.event_counter);
+        double lambda = ecmc_params.theta_sample / static_cast<double>(state.event_counter);
 
         double plaq = average_plaquette(field, geo);
         double Q = topological_charge(field, geo);

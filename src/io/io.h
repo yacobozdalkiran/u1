@@ -7,6 +7,7 @@
 #include "../field/field.h"
 #include "../geometry/geometry.h"
 #include "../ecmc/ecmc.h"
+#include "../heatbath/heatbath.h"
 
 /**
  * @brief Structure to hold simulation parameters.
@@ -17,8 +18,6 @@ struct SimulationParameters {
     double beta;
     int n_updates;
     unsigned long long seed;
-    // ECMC specific
-    ECMCParams ecmc_params;
     //Measures params
     int plaq_each;
     int topo_each;
@@ -26,6 +25,24 @@ struct SimulationParameters {
     int save_each;
     std::string output_dir;
     std::string name;
+};
+
+/**
+ * @brief Structure to hold ECMC simulation parameters.
+ */
+struct ECMCSimulationParameters {
+    SimulationParameters sim_params;
+    // ECMC specific
+    ECMCParams ecmc_params;
+};
+
+/**
+ * @brief Structure to hold Heatbath simulation parameters.
+ */
+struct HBSimulationParameters {
+    SimulationParameters sim_params;
+    // Heatbath specific
+    HBParams hb_params;
 };
 
 /**
@@ -37,6 +54,11 @@ bool read_input_file_simparams(const std::string& filename, SimulationParameters
  * @brief Reads simulation parameters from a text file.
  */
 bool read_input_file_ecmcparams(const std::string& filename, ECMCParams& params);
+
+/**
+ * @brief Reads simulation parameters from a text file.
+ */
+bool read_input_file_hbparams(const std::string& filename, HBParams& params);
 
 /**
  * @brief Writes a vector of doubles to a file.
@@ -90,8 +112,12 @@ bool save_ecmc_state(const std::string& filename, const LocalChainState& state);
 bool load_ecmc_state(const std::string& filename, LocalChainState& state);
 
 /**
- * @brief Prints the ECMC Simulation paramaters.
+ * @brief Prints the Simulation paramaters.
  */
-void print_parameters(const SimulationParameters& sim_params);
+void print_parameters_sim(const SimulationParameters& sim_params);
 
+/**
+ * @brief Prints the ECMC paramaters.
+ */
+void print_parameters_ecmc(const ECMCParams& ecmc_params);
 #endif

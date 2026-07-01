@@ -141,9 +141,8 @@ int random_site(const Geometry& geo, std::mt19937_64& rng) {
     return random_coord(rng);
 }
 
-void ecmc_sample(LocalChainState& state, GaugeField& field, Distributions& d,
+void ecmc_sample(LocalChainState& state, GaugeField& field, double beta, Distributions& d,
                              const Geometry& geo, const ECMCParams& params, std::mt19937_64& rng) {
-    const double beta = params.beta;
 
     if (!state.initialized) {
         state.site = random_site(geo, rng);
