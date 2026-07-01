@@ -78,8 +78,7 @@ void update(GaugeField& field, int site, int mu, double theta, int epsilon);
 /**
  * @brief Lift without backtracking from a link. (algo 0)
  */
-std::pair<std::pair<int, int>, int> lift_improved_fast_norev(const GaugeField& field,
-                                                             const Geometry& geo, int site, int mu,
+std::pair<std::pair<int, int>, int> lift_improved_fast_norev(const Geometry& geo, int site, int mu,
                                                              int j, std::mt19937_64& rng);
 
 // =========== Algo 1 : Topology-driven lifts ===========
@@ -114,13 +113,13 @@ namespace algo2 {
 void compute_plaquettes(const GaugeField& field, const Geometry& geo, int site,
                         std::array<double, 4>& list_plaquettes);
 
-void compute_reject_angles_fast(const std::array<double, 4>& list_plaquettes, int epsilon,
-                                const double& beta, std::array<double, 4>& reject_angles,
-                                std::mt19937_64& rng);
+void compute_reject_angles_fast(const std::array<double, 4>& list_plaquettes, const double& beta,
+                                std::array<double, 4>& reject_angles, std::mt19937_64& rng, int epsilon);
 
+void solve_reject_fast(double A, double B, double& gamma, double& reject, int epsilon);
 void update(GaugeField& field, const Geometry& geo, int site, double theta_update);
 
-void ecmc_sample(LocalChainState& state, GaugeField& field, double beta, const Geometry& geo,
+void ecmc_sample(LocalChainState& state, GaugeField& field, double beta, Distributions& d, const Geometry& geo,
                  const ECMCParams& params, std::mt19937_64& rng);
 }  // namespace algo2
 

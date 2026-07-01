@@ -56,7 +56,8 @@ bool read_input_file_simparams(const std::string& filename, SimulationParameters
         }
     }
 
-    if (!has_L || !has_beta || !has_updates || !has_out || !has_seed || !has_save || !has_name || !has_plaq_each || !has_topo_each) {
+    if (!has_L || !has_beta || !has_updates || !has_out || !has_seed || !has_save || !has_name ||
+        !has_plaq_each || !has_topo_each) {
         std::cerr << "Error: Missing parameters in input file. Need L, beta, n_updates, "
                      "output_dir, name, seed, and save_each."
                   << std::endl;
@@ -76,7 +77,7 @@ bool read_input_file_ecmcparams(const std::string& filename, ECMCParams& params)
     std::string line;
     bool has_param_theta_sample = false;
     bool has_param_theta_refresh = false;
-    bool has_algo= false;
+    bool has_algo = false;
     bool has_eta = false;
 
     while (std::getline(infile, line)) {
@@ -95,8 +96,7 @@ bool read_input_file_ecmcparams(const std::string& filename, ECMCParams& params)
         }
     }
 
-    if (!has_param_theta_sample || !has_param_theta_refresh || !has_algo||
-        !has_eta) {
+    if (!has_param_theta_sample || !has_param_theta_refresh || !has_algo || !has_eta) {
         std::cerr << "Error: Missing parameters in input file. Need theta_sample, "
                      "theta_refresh, algo, eta."
                   << std::endl;
@@ -203,10 +203,22 @@ bool load_configuration(const std::string& filename, GaugeField& field, const Ge
     double val;
     for (int site = 0; site < geo.V; ++site) {
         for (int mu = 0; mu < 2; ++mu) {
-            if (!(infile >> val)) return false;
+            // If it fails to read here, the file is too small
+            if (!(infile >> val)) {
+                std::cerr << "Error: Configuration file is smaller than expected geometry.\n";
+                return false;
+            }
             field.set_link(site, mu, val);
         }
     }
+
+    // Check if there is extra data left in the file (file is too large)
+    std::string extra;
+    if (infile >> extra) {
+        std::cerr << "Error: Configuration file contains extra data beyond expected geometry.\n";
+        return false;
+    }
+
     return true;
 }
 
@@ -285,7 +297,7 @@ void print_parameters_ecmc(const ECMCParams& ecmc_params) {
     std::cout << "ECMC Parameters\n";
     std::cout << "----------------------------------\n";
     std::cout << "Theta sample  : " << ecmc_params.theta_sample << "\n";
-    std::cout << "Theta refresh : " << ecmc_params.theta_refresh<< "\n";
+    std::cout << "Theta refresh : " << ecmc_params.theta_refresh << "\n";
     std::cout << "----------------------------------\n\n";
 }
 

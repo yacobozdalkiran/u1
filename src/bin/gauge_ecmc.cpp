@@ -84,8 +84,8 @@ int main(int argc, char* argv[]) {
             resuming = true;
             std::cout << "Resuming from iteration " << start_iter << "\n";
         } else {
-            std::cerr << "Error loading checkpoint files. Starting from scratch.\n";
-            start_iter = 0;
+            std::cerr << "Error loading checkpoint files.\n";
+            return 1;
         }
     }
 
@@ -111,7 +111,8 @@ int main(int argc, char* argv[]) {
     std::cout << std::fixed << std::setprecision(6);
     for (int i = start_iter + 1; i <= target_iter; ++i) {
         std::cout << "\n========== Configuration " << i << "/" << target_iter << " ==========\n";
-        ecmc_sample(state, field, sim_params.beta, dists, geo, ecmc_params, rng);
+        if (ecmc_params.algo==0 or ecmc_params.algo==1) ecmc_sample(state, field, sim_params.beta, dists, geo, ecmc_params, rng);
+        if (ecmc_params.algo==2) algo2::ecmc_sample(state, field, sim_params.beta, dists, geo, ecmc_params, rng);
 
         double lambda = ecmc_params.theta_sample / static_cast<double>(state.event_counter);
         std::cout << "Lambda : " << lambda << "\n";

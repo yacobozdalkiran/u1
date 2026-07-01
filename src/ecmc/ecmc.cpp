@@ -29,8 +29,6 @@ void compute_reject_angles_fast(const std::array<double, 2>& list_plaquettes, in
                                 const double& beta, std::array<double, 2>& reject_angles,
                                 std::mt19937_64& rng) {
     static std::uniform_real_distribution<double> unif01_g(0.0, 1.0);
-
-#pragma omp simd
     for (int i = 0; i < 2; i++) {
         double gamma = -std::log(1.0 - unif01_g(rng));
         double A = -epsilon * beta * std::cos(list_plaquettes[i]);
@@ -58,8 +56,7 @@ size_t selectVariable4(const std::array<double, 4>& probas, std::mt19937_64& rng
     return 3;
 }
 
-std::pair<std::pair<int, int>, int> lift_improved_fast_norev(const GaugeField& field,
-                                                             const Geometry& geo, int site, int mu,
+std::pair<std::pair<int, int>, int> lift_improved_fast_norev(const Geometry& geo, int site, int mu,
                                                              int j, std::mt19937_64& rng) {
     std::array<double, 3> probas = {1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0};
     size_t index_lift = selectVariable_norev(probas, rng);
@@ -214,7 +211,7 @@ void ecmc_sample(LocalChainState& state, GaugeField& field, double beta, Distrib
             if (params.algo == 1) {
                 l = lift_topological(field, geo, site_current, mu_current, j, params, rng);
             } else if (params.algo == 0) {
-                l = lift_improved_fast_norev(field, geo, site_current, mu_current, j, rng);
+                l = lift_improved_fast_norev(geo, site_current, mu_current, j, rng);
             }
             lift_counter++;
             site_current = l.first.first;
@@ -228,7 +225,6 @@ void solve_reject_fast(double A, double B, double& gamma, double& reject, int ep
     // Change A depending on epsilon
     A = (epsilon == -1) ? -A : A;
 
-    // std::hypot est souvent mieux vectorisé par SVML
     double R = std::hypot(A, B);
     double invR = 1.0 / R;
     double period = 2.0 * R;
@@ -273,15 +269,15 @@ void algo2::compute_plaquettes(const GaugeField& field, const Geometry& geo, int
     list_plaquettes[3] = field.plaquette(geo, site_bottom);
 }
 
-void algo2::compute_reject_angles_fast(const std::array<double, 4>& list_plaquettes, int epsilon,
+void algo2::compute_reject_angles_fast(const std::array<double, 4>& list_plaquettes,
                                        const double& beta, std::array<double, 4>& reject_angles,
-                                       std::mt19937_64& rng) {
+                                       std::mt19937_64& rng, int epsilon) {
     static std::uniform_real_distribution<double> unif01_g(0.0, 1.0);
-#pragma omp simd
+    std::array<double, 4> coeffs_plaquette = {-1.0, 1.0, 1.0, -1.0};
     for (int i = 0; i < 4; i++) {
         double gamma = -std::log(1.0 - unif01_g(rng));
-        double A = -epsilon * beta * std::cos(list_plaquettes[i]);
-        double B = epsilon * beta * std::sin(list_plaquettes[i]);
+        double A = -beta * std::cos(list_plaquettes[i]);
+        double B = epsilon * coeffs_plaquette[i] * beta * std::sin(list_plaquettes[i]);
         solve_reject_fast(A, B, gamma, reject_angles[i], epsilon);
     }
 }
@@ -291,16 +287,16 @@ void algo2::update(GaugeField& field, const Geometry& geo, int site, double thet
     int site_pt = geo.get_neighbor(site, 1, pos);
     field.add_to_link(site, 0, theta_update);
     field.add_to_link(site_px, 1, theta_update);
-    field.add_to_link(site, 1, -theta_update);
-    field.add_to_link(site_pt, 0, -theta_update);
+    field.add_to_link(site, 1, theta_update);
+    field.add_to_link(site_pt, 0, theta_update);
 }
 
-void algo2::ecmc_sample(LocalChainState& state, GaugeField& field, double beta, const Geometry& geo,
+void algo2::ecmc_sample(LocalChainState& state, GaugeField& field, double beta, Distributions& d, const Geometry& geo,
                         const ECMCParams& params, std::mt19937_64& rng) {
     if (!state.initialized) {
         state.site = random_site(geo, rng);
         state.mu = -1;
-        state.epsilon = 1;
+        state.epsilon = 2 * d.random_eps(rng) - 1;
         state.theta_parcouru_refresh = 0.0;
         state.event_counter = 0;
         state.lift_counter = 0;
@@ -322,7 +318,7 @@ void algo2::ecmc_sample(LocalChainState& state, GaugeField& field, double beta, 
 
     while (true) {
         compute_plaquettes(field, geo, site_current, list_plaquettes);
-        compute_reject_angles_fast(list_plaquettes, epsilon_current, beta, reject_angles, rng);
+        compute_reject_angles_fast(list_plaquettes, beta, reject_angles, rng, epsilon_current);
 
         int j = 0;
         double theta_reject = reject_angles[0];
@@ -338,7 +334,8 @@ void algo2::ecmc_sample(LocalChainState& state, GaugeField& field, double beta, 
         double theta_step = std::min({theta_reject, dist_to_sample, dist_to_refresh});
 
         if (theta_step == dist_to_sample) {
-            update(field, geo, site_current, dist_to_sample);
+            //Sample
+            update(field, geo, site_current, epsilon_current*dist_to_sample);
             event_counter++;
             state.site = site_current;
             state.epsilon = epsilon_current;
@@ -347,13 +344,16 @@ void algo2::ecmc_sample(LocalChainState& state, GaugeField& field, double beta, 
             state.lift_counter = lift_counter;
             return;
         } else if (theta_step == dist_to_refresh) {
-            update(field, geo, site_current, dist_to_refresh);
+            //Refresh
+            update(field, geo, site_current, epsilon_current*dist_to_refresh);
             event_counter++;
             theta_parcouru_sample += dist_to_refresh;
             theta_parcouru_refresh = 0.0;
             site_current = random_site(geo, rng);
+            epsilon_current = 2*d.random_eps(rng)-1;
         } else {
-            update(field, geo, site_current, theta_reject);
+            //Update+lift
+            update(field, geo, site_current, epsilon_current*theta_reject);
             event_counter++;
             theta_parcouru_sample += theta_reject;
             theta_parcouru_refresh += theta_reject;
@@ -378,4 +378,39 @@ void algo2::ecmc_sample(LocalChainState& state, GaugeField& field, double beta, 
             lift_counter++;
         }
     }
+}
+void algo2::solve_reject_fast(double A, double B, double& gamma, double& reject, int epsilon) {
+    // Change A depending on epsilon
+    A = (epsilon == -1) ? -A : A;
+
+    double R = std::hypot(A, B);
+    double invR = 1.0 / R;
+    double period = 2.0 * R;
+
+    double discarded_number = std::floor(gamma / period);
+    gamma -= discarded_number * period;
+
+    double phi = std::atan2(-A, B);
+    phi += (phi < 0.0) ? (2.0 * M_PI) : 0.0;
+
+    double alpha;
+    double p1 = R - A;
+
+    // Le compilateur Intel transforme ce bloc en "masking" SIMD
+    if (phi < (M_PI * 0.5) || phi > (M_PI * 1.5)) {
+        alpha = (gamma > p1) ? (gamma - p1) * invR - 1.0 : (gamma + A) * invR;
+    } else {
+        alpha = gamma * invR - 1.0;
+    }
+
+    // Clamp (std::clamp est vectorisable en C++17, ou version manuelle)
+    alpha = (alpha > 1.0) ? 1.0 : ((alpha < -1.0) ? -1.0 : alpha);
+
+    double theta = phi + std::asin(alpha);
+
+    // Normalisation 2*PI sans if/else
+    theta += (theta < 0.0) ? (2.0 * M_PI) : 0.0;
+    theta -= (theta >= 2.0 * M_PI) ? (2.0 * M_PI) : 0.0;
+
+    reject = theta + 2.0 * M_PI * discarded_number;
 }

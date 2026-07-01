@@ -62,8 +62,8 @@ int main(int argc, char* argv[]) {
             resuming = true;
             std::cout << "Resuming from iteration " << start_iter << "\n";
         } else {
-            std::cerr << "Error loading checkpoint files. Starting from scratch.\n";
-            start_iter = 0;
+            std::cerr << "Error loading checkpoint files.\n";
+            return 1;
         }
     }
 
