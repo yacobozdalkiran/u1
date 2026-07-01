@@ -265,8 +265,10 @@ bool load_ecmc_state(const std::string& filename, LocalChainState& state) {
     }
     return true;
 }
+
 void print_parameters_sim(const SimulationParameters& sim_params) {
-    std::cout << "--- Simulation Parameters ---\n";
+    std::cout << "Simulation Parameters\n";
+    std::cout << "----------------------------------\n";
     std::cout << "L                 : " << sim_params.L << "\n";
     std::cout << "Beta              : " << sim_params.beta << "\n";
     std::cout << "Updates (Sweeps)  : " << sim_params.n_updates << "\n";
@@ -278,9 +280,19 @@ void print_parameters_sim(const SimulationParameters& sim_params) {
     std::cout << "Output Dir        : " << sim_params.output_dir << "/" << sim_params.name << "\n";
     std::cout << "----------------------------------\n\n";
 }
+
 void print_parameters_ecmc(const ECMCParams& ecmc_params) {
-    std::cout << "--- ECMC Parameters ---\n";
+    std::cout << "ECMC Parameters\n";
+    std::cout << "----------------------------------\n";
     std::cout << "Theta sample  : " << ecmc_params.theta_sample << "\n";
     std::cout << "Theta refresh : " << ecmc_params.theta_refresh<< "\n";
+    std::cout << "----------------------------------\n\n";
+}
+
+void print_parameters_hb(const HBParams& hb_params) {
+    std::cout << "Heatbath Parameters\n";
+    std::cout << "----------------------------------\n";
+    std::cout << "Num. of sweeps  : " << hb_params.n_sweep << "\n";
+    std::cout << "Num. of hits    : " << hb_params.n_hit << "\n";
     std::cout << "----------------------------------\n\n";
 }

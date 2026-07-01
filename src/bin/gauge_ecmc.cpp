@@ -42,6 +42,7 @@ int main(int argc, char* argv[]) {
     ECMCParams ecmc_params = params.ecmc_params;
 
     print_parameters_sim(sim_params);
+    print_parameters_ecmc(ecmc_params);
     Geometry geo(sim_params.L);
     GaugeField field(geo);
     std::mt19937_64 rng(sim_params.seed);
@@ -109,25 +110,29 @@ int main(int argc, char* argv[]) {
 
     std::cout << std::fixed << std::setprecision(6);
     for (int i = start_iter + 1; i <= target_iter; ++i) {
-        std::cout << "========== Configuration " << i << "/" << target_iter << " ==========\n";
+        std::cout << "\n========== Configuration " << i << "/" << target_iter << " ==========\n";
         ecmc_sample(state, field, sim_params.beta, dists, geo, ecmc_params, rng);
 
         double lambda = ecmc_params.theta_sample / static_cast<double>(state.event_counter);
-
-        double plaq = average_plaquette(field, geo);
-        double Q = topological_charge(field, geo);
-        double chi = topological_susceptibility(field, geo);
-
-        plaquettes.push_back(plaq);
-        charges.push_back(Q);
-        susceptibilities.push_back(chi);
+        std::cout << "Lambda : " << lambda << "\n";
         event_counts.push_back(static_cast<double>(state.event_counter));
         lift_counts.push_back(static_cast<double>(state.lift_counter));
         lambdas.push_back(lambda);
 
-        if (i % 10 == 0 || i == target_iter) {
-            std::cout << "<P> = " << plaq << " | Q=" << Q << " | Lambda=" << lambda << "\n";
+        if (i % sim_params.plaq_each == 0) {
+            double plaq = average_plaquette(field, geo);
+            std::cout << "<P> = " << plaq << "\n";
+            plaquettes.push_back(plaq);
         }
+        if (i % sim_params.topo_each == 0) {
+            double Q = topological_charge(field, geo);
+            double chi = (Q * Q) / static_cast<double>(geo.V);
+            std::cout << "Q = " << Q << "\n";
+            std::cout << "Chi = " << chi << "\n";
+            charges.push_back(Q);
+            susceptibilities.push_back(chi);
+        }
+
 
         if (i % sim_params.save_each == 0) {
             save_configuration(cp_config_path, field, geo);

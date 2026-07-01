@@ -120,4 +120,9 @@ void print_parameters_sim(const SimulationParameters& sim_params);
  * @brief Prints the ECMC paramaters.
  */
 void print_parameters_ecmc(const ECMCParams& ecmc_params);
+
+/**
+ * @brief Prints the Heatbath paramaters.
+ */
+void print_parameters_hb(const HBParams& hb_params);
 #endif
