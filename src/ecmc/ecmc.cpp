@@ -1,7 +1,8 @@
 #include "ecmc.h"
-#include "../obs/observables.h"
 
 #include <algorithm>
+
+#include "../obs/observables.h"
 
 void compute_plaquettes(const GaugeField& field, const Geometry& geo, int site, int mu,
                         std::array<double, 2>& list_plaquettes) {
@@ -24,8 +25,7 @@ void compute_plaquettes(const GaugeField& field, const Geometry& geo, int site, 
     list_plaquettes[1] = field.get_link(site, mu) - V1 - V0 + V2;
 }
 
-void compute_reject_angles_fast(const GaugeField& field, int site, int mu,
-                                const std::array<double, 2>& list_plaquette, int epsilon,
+void compute_reject_angles_fast(const std::array<double, 2>& list_plaquette, int epsilon,
                                 const double& beta, std::array<double, 2>& reject_angles,
                                 std::mt19937_64& rng) {
     static std::uniform_real_distribution<double> unif01_g(0.0, 1.0);
@@ -102,20 +102,24 @@ double get_topological_variation(const GaugeField& field, const Geometry& geo, i
 }
 
 std::pair<std::pair<int, int>, int> lift_topological(const GaugeField& field, const Geometry& geo,
-                                                   int site, int mu, int j,
-                                                   const ECMCParams& params, std::mt19937_64& rng) {
+                                                     int site, int mu, int j,
+                                                     const ECMCParams& params,
+                                                     std::mt19937_64& rng) {
     std::pair<int, int> links[4];
     links[0] = {site, mu};
     for (int k = 0; k < 3; ++k) links[k + 1] = geo.get_link_staple(site, mu, j, k);
 
     double a[4];
-    for (int k = 0; k < 4; ++k) a[k] = get_topological_variation(field, geo, links[k].first, links[k].second);
+    for (int k = 0; k < 4; ++k)
+        a[k] = get_topological_variation(field, geo, links[k].first, links[k].second);
 
     double W[4][4];
     for (int i = 0; i < 4; ++i) {
         for (int k = 0; k < 4; ++k) {
-            if (i == k) W[i][k] = 0.0;
-            else W[i][k] = a[i] + a[k] + params.eta;
+            if (i == k)
+                W[i][k] = 0.0;
+            else
+                W[i][k] = a[i] + a[k] + params.eta;
         }
     }
     sinkhorn_knopp(W, 15);
@@ -142,8 +146,7 @@ int random_site(const Geometry& geo, std::mt19937_64& rng) {
 }
 
 void ecmc_sample(LocalChainState& state, GaugeField& field, double beta, Distributions& d,
-                             const Geometry& geo, const ECMCParams& params, std::mt19937_64& rng) {
-
+                 const Geometry& geo, const ECMCParams& params, std::mt19937_64& rng) {
     if (!state.initialized) {
         state.site = random_site(geo, rng);
         state.mu = d.random_dir(rng);
@@ -170,8 +173,7 @@ void ecmc_sample(LocalChainState& state, GaugeField& field, double beta, Distrib
 
     while (true) {
         compute_plaquettes(field, geo, site_current, mu_current, list_plaquettes);
-        compute_reject_angles_fast(field, site_current, mu_current, list_plaquettes,
-                                   epsilon_current, beta, reject_angles, rng);
+        compute_reject_angles_fast(list_plaquettes, epsilon_current, beta, reject_angles, rng);
 
         int j = 0;
         double theta_reject = reject_angles[0];
@@ -209,9 +211,9 @@ void ecmc_sample(LocalChainState& state, GaugeField& field, double beta, Distrib
             theta_parcouru_refresh += theta_reject;
 
             std::pair<std::pair<int, int>, int> l;
-            if (params.algo==1) {
+            if (params.algo == 1) {
                 l = lift_topological(field, geo, site_current, mu_current, j, params, rng);
-            } else if (params.algo==0) {
+            } else if (params.algo == 0) {
                 l = lift_improved_fast_norev(field, geo, site_current, mu_current, j, rng);
             }
             lift_counter++;

@@ -56,7 +56,7 @@ bool read_input_file_simparams(const std::string& filename, SimulationParameters
         }
     }
 
-    if (!has_L || !has_beta || !has_updates || !has_out || !has_seed || !has_save || !has_name) {
+    if (!has_L || !has_beta || !has_updates || !has_out || !has_seed || !has_save || !has_name || !has_plaq_each || !has_topo_each) {
         std::cerr << "Error: Missing parameters in input file. Need L, beta, n_updates, "
                      "output_dir, name, seed, and save_each."
                   << std::endl;

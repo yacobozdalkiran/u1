@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
     std::mt19937_64 rng(sim_params.seed);
     field.cold_start();
 
-    Distributions dists(ecmc_params);
+    Distributions dists;
     LocalChainState state;
 
     std::vector<double> plaquettes;
