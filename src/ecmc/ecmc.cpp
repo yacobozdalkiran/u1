@@ -25,7 +25,7 @@ void compute_plaquettes(const GaugeField& field, const Geometry& geo, int site, 
     list_plaquettes[1] = field.get_link(site, mu) - V1 - V0 + V2;
 }
 
-void compute_reject_angles_fast(const std::array<double, 2>& list_plaquette, int epsilon,
+void compute_reject_angles_fast(const std::array<double, 2>& list_plaquettes, int epsilon,
                                 const double& beta, std::array<double, 2>& reject_angles,
                                 std::mt19937_64& rng) {
     static std::uniform_real_distribution<double> unif01_g(0.0, 1.0);
@@ -33,8 +33,8 @@ void compute_reject_angles_fast(const std::array<double, 2>& list_plaquette, int
 #pragma omp simd
     for (int i = 0; i < 2; i++) {
         double gamma = -std::log(1.0 - unif01_g(rng));
-        double A = -epsilon * beta * std::cos(list_plaquette[i]);
-        double B = epsilon * beta * std::sin(list_plaquette[i]);
+        double A = -epsilon * beta * std::cos(list_plaquettes[i]);
+        double B = epsilon * beta * std::sin(list_plaquettes[i]);
         solve_reject_fast(A, B, gamma, reject_angles[i], epsilon);
     }
 }
@@ -272,3 +272,16 @@ void algo2::compute_plaquettes(const GaugeField& field, const Geometry& geo, int
     list_plaquettes[2] = field.plaquette(geo, site_left);
     list_plaquettes[3] = field.plaquette(geo, site_bottom);
 }
+
+void algo2::compute_reject_angles_fast(const std::array<double, 4>& list_plaquettes, int epsilon,
+                                       const double& beta, std::array<double, 4>& reject_angles,
+                                       std::mt19937_64& rng) {
+    static std::uniform_real_distribution<double> unif01_g(0.0, 1.0);
+#pragma omp simd
+    for (int i = 0; i < 4; i++) {
+        double gamma = -std::log(1.0 - unif01_g(rng));
+        double A = -epsilon * beta * std::cos(list_plaquettes[i]);
+        double B = epsilon * beta * std::sin(list_plaquettes[i]);
+        solve_reject_fast(A, B, gamma, reject_angles[i], epsilon);
+    }
+};

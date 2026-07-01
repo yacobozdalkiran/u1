@@ -114,6 +114,9 @@ namespace algo2 {
 void compute_plaquettes(const GaugeField& field, const Geometry& geo, int site,
                         std::array<double, 4>& list_plaquettes);
 
+void compute_reject_angles_fast(const std::array<double, 4>& list_plaquettes, int epsilon,
+                                const double& beta, std::array<double, 4>& reject_angles,
+                                std::mt19937_64& rng);
 }  // namespace algo2
 
 // =========== All Algos ===========
