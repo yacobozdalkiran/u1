@@ -76,7 +76,7 @@ bool read_input_file_ecmcparams(const std::string& filename, ECMCParams& params)
     std::string line;
     bool has_param_theta_sample = false;
     bool has_param_theta_refresh = false;
-    bool has_use_topological_lifting = false;
+    bool has_algo= false;
     bool has_eta = false;
 
     while (std::getline(infile, line)) {
@@ -88,17 +88,17 @@ bool read_input_file_ecmcparams(const std::string& filename, ECMCParams& params)
             if (iss >> params.theta_sample) has_param_theta_sample = true;
         } else if (key == "theta_refresh") {
             if (iss >> params.theta_refresh) has_param_theta_refresh = true;
-        } else if (key == "use_topological_lifting") {
-            if (iss >> params.use_topological_lifting) has_use_topological_lifting = true;
+        } else if (key == "algo") {
+            if (iss >> params.algo) has_algo = true;
         } else if (key == "eta") {
             if (iss >> params.eta) has_eta = true;
         }
     }
 
-    if (!has_param_theta_sample || !has_param_theta_refresh || !has_use_topological_lifting ||
+    if (!has_param_theta_sample || !has_param_theta_refresh || !has_algo||
         !has_eta) {
         std::cerr << "Error: Missing parameters in input file. Need theta_sample, "
-                     "theta_refresh, use_topological_lifting, eta."
+                     "theta_refresh, algo, eta."
                   << std::endl;
         return false;
     }
