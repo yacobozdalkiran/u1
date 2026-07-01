@@ -117,6 +117,11 @@ void compute_plaquettes(const GaugeField& field, const Geometry& geo, int site,
 void compute_reject_angles_fast(const std::array<double, 4>& list_plaquettes, int epsilon,
                                 const double& beta, std::array<double, 4>& reject_angles,
                                 std::mt19937_64& rng);
+
+void update(GaugeField& field, const Geometry& geo, int site, double theta_update);
+
+void ecmc_sample(LocalChainState& state, GaugeField& field, double beta, const Geometry& geo,
+                 const ECMCParams& params, std::mt19937_64& rng);
 }  // namespace algo2
 
 // =========== All Algos ===========

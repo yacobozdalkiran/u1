@@ -266,7 +266,7 @@ void algo2::compute_plaquettes(const GaugeField& field, const Geometry& geo, int
     int site_right = geo.get_neighbor(site, 0, pos);
     int site_top = geo.get_neighbor(site, 1, pos);
     int site_left = geo.get_neighbor(site, 0, neg);
-    int site_bottom  = geo.get_neighbor(site, 1, neg);
+    int site_bottom = geo.get_neighbor(site, 1, neg);
     list_plaquettes[0] = field.plaquette(geo, site_right);
     list_plaquettes[1] = field.plaquette(geo, site_top);
     list_plaquettes[2] = field.plaquette(geo, site_left);
@@ -284,4 +284,98 @@ void algo2::compute_reject_angles_fast(const std::array<double, 4>& list_plaquet
         double B = epsilon * beta * std::sin(list_plaquettes[i]);
         solve_reject_fast(A, B, gamma, reject_angles[i], epsilon);
     }
-};
+}
+
+void algo2::update(GaugeField& field, const Geometry& geo, int site, double theta_update) {
+    int site_px = geo.get_neighbor(site, 0, pos);
+    int site_pt = geo.get_neighbor(site, 1, pos);
+    field.add_to_link(site, 0, theta_update);
+    field.add_to_link(site_px, 1, theta_update);
+    field.add_to_link(site, 1, -theta_update);
+    field.add_to_link(site_pt, 0, -theta_update);
+}
+
+void algo2::ecmc_sample(LocalChainState& state, GaugeField& field, double beta, const Geometry& geo,
+                        const ECMCParams& params, std::mt19937_64& rng) {
+    if (!state.initialized) {
+        state.site = random_site(geo, rng);
+        state.mu = -1;
+        state.epsilon = 1;
+        state.theta_parcouru_refresh = 0.0;
+        state.event_counter = 0;
+        state.lift_counter = 0;
+        state.initialized = true;
+    }
+
+    int site_current = state.site;
+    int epsilon_current = state.epsilon;
+    size_t event_counter = 0;
+    size_t lift_counter = 0;
+
+    double theta_sample = params.theta_sample;
+    double theta_refresh = params.theta_refresh;
+    double theta_parcouru_sample = 0.0;
+    double theta_parcouru_refresh = state.theta_parcouru_refresh;
+
+    std::array<double, 4> reject_angles;
+    std::array<double, 4> list_plaquettes;
+
+    while (true) {
+        compute_plaquettes(field, geo, site_current, list_plaquettes);
+        compute_reject_angles_fast(list_plaquettes, epsilon_current, beta, reject_angles, rng);
+
+        int j = 0;
+        double theta_reject = reject_angles[0];
+        for (int i = 1; i < 4; i++) {
+            if (reject_angles[i] < theta_reject) {
+                theta_reject = reject_angles[i];
+                j = i;
+            }
+        }
+
+        double dist_to_sample = theta_sample - theta_parcouru_sample;
+        double dist_to_refresh = theta_refresh - theta_parcouru_refresh;
+        double theta_step = std::min({theta_reject, dist_to_sample, dist_to_refresh});
+
+        if (theta_step == dist_to_sample) {
+            update(field, geo, site_current, dist_to_sample);
+            event_counter++;
+            state.site = site_current;
+            state.epsilon = epsilon_current;
+            state.theta_parcouru_refresh = theta_parcouru_refresh + dist_to_sample;
+            state.event_counter = event_counter;
+            state.lift_counter = lift_counter;
+            return;
+        } else if (theta_step == dist_to_refresh) {
+            update(field, geo, site_current, dist_to_refresh);
+            event_counter++;
+            theta_parcouru_sample += dist_to_refresh;
+            theta_parcouru_refresh = 0.0;
+            site_current = random_site(geo, rng);
+        } else {
+            update(field, geo, site_current, theta_reject);
+            event_counter++;
+            theta_parcouru_sample += theta_reject;
+            theta_parcouru_refresh += theta_reject;
+
+            // Lift
+            if (j == 0) {
+                site_current = geo.get_neighbor(site_current, 0, pos);
+                site_current = geo.get_neighbor(site_current, 0, pos);
+            }
+            if (j == 1) {
+                site_current = geo.get_neighbor(site_current, 1, pos);
+                site_current = geo.get_neighbor(site_current, 1, pos);
+            }
+            if (j == 2) {
+                site_current = geo.get_neighbor(site_current, 0, neg);
+                site_current = geo.get_neighbor(site_current, 0, neg);
+            }
+            if (j == 3) {
+                site_current = geo.get_neighbor(site_current, 1, neg);
+                site_current = geo.get_neighbor(site_current, 1, neg);
+            }
+            lift_counter++;
+        }
+    }
+}

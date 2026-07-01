@@ -20,6 +20,7 @@ class GaugeField{
         //Access
         double get_link(int site, int mu) const;
         void set_link(int site, int mu, double new_value);
+        void add_to_link(int site, int mu, double value);
         //Plaquette/Staples
         double plaquette(const Geometry& geo, int site) const;
 };
