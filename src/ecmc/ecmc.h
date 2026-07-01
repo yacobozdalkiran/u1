@@ -10,8 +10,8 @@
 struct ECMCParams {
     double theta_sample = 100;
     double theta_refresh = 50;
-    bool use_topological_lifting = false;
-    double eta = 1e-6;
+    int algo = 0; //0: classic ecmc 1: topological lifting
+    double eta = 1e-6; //Only if algo=1
 };
 
 // Saves the state of a local Event-Chain

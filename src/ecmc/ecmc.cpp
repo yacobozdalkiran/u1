@@ -209,9 +209,9 @@ void ecmc_sample(LocalChainState& state, GaugeField& field, double beta, Distrib
             theta_parcouru_refresh += theta_reject;
 
             std::pair<std::pair<int, int>, int> l;
-            if (params.use_topological_lifting) {
+            if (params.algo==1) {
                 l = lift_topological(field, geo, site_current, mu_current, j, params, rng);
-            } else {
+            } else if (params.algo==0) {
                 l = lift_improved_fast_norev(field, geo, site_current, mu_current, j, rng);
             }
             lift_counter++;
