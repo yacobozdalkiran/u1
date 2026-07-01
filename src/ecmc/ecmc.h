@@ -56,7 +56,8 @@ void compute_plaquettes(const GaugeField& field, const Geometry& geo, int site, 
                         std::array<double, 2>& list_plaquettes);
 
 /**
- * @brief Computes the values of the reject angles for each plaquette attached to a link. (algo 0, 1)
+ * @brief Computes the values of the reject angles for each plaquette attached to a link. (algo 0,
+ * 1)
  */
 void compute_reject_angles_fast(const std::array<double, 2>& list_plaquettes, int epsilon,
                                 const double& beta, std::array<double, 2>& reject_angles,
@@ -81,7 +82,6 @@ std::pair<std::pair<int, int>, int> lift_improved_fast_norev(const GaugeField& f
                                                              const Geometry& geo, int site, int mu,
                                                              int j, std::mt19937_64& rng);
 
-
 // =========== Algo 1 : Topology-driven lifts ===========
 
 /**
@@ -90,7 +90,8 @@ std::pair<std::pair<int, int>, int> lift_improved_fast_norev(const GaugeField& f
 void sinkhorn_knopp(double W[4][4], int iterations = 15);
 
 /**
- * @brief Returns the sum of the absolute value of local topological charge of the 2 plaquettes attached to a link normalized to [0,1]. (algo 1)
+ * @brief Returns the sum of the absolute value of local topological charge of the 2 plaquettes
+ * attached to a link normalized to [0,1]. (algo 1)
  */
 double get_topological_variation(const GaugeField& field, const Geometry& geo, int site, int mu);
 
@@ -102,10 +103,18 @@ std::pair<std::pair<int, int>, int> lift_topological(const GaugeField& field, co
                                                      const ECMCParams& params,
                                                      std::mt19937_64& rng);
 
-
 // =========== Algo 2 : Plaquette ECMC ===========
 
+namespace algo2 {
 
+/**
+ * @brief computes the 4 plaquettes around the plaquette at a site. Order : right, top, left,
+ * bottom.
+ */
+void compute_plaquettes(const GaugeField& field, const Geometry& geo, int site,
+                        std::array<double, 4>& list_plaquettes);
+
+}  // namespace algo2
 
 // =========== All Algos ===========
 

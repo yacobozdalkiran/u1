@@ -260,3 +260,15 @@ void solve_reject_fast(double A, double B, double& gamma, double& reject, int ep
 
     reject = theta + 2.0 * M_PI * discarded_number;
 }
+
+void algo2::compute_plaquettes(const GaugeField& field, const Geometry& geo, int site,
+                               std::array<double, 4>& list_plaquettes) {
+    int site_right = geo.get_neighbor(site, 0, pos);
+    int site_top = geo.get_neighbor(site, 1, pos);
+    int site_left = geo.get_neighbor(site, 0, neg);
+    int site_bottom  = geo.get_neighbor(site, 1, neg);
+    list_plaquettes[0] = field.plaquette(geo, site_right);
+    list_plaquettes[1] = field.plaquette(geo, site_top);
+    list_plaquettes[2] = field.plaquette(geo, site_left);
+    list_plaquettes[3] = field.plaquette(geo, site_bottom);
+}
