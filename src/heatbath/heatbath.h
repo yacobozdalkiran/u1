@@ -5,6 +5,15 @@
 #include "../geometry/geometry.h"
 #include <random>
 
+
+/**
+ * @brief Structure to hot heatbath parameters.
+ */
+struct HBParams {
+    int n_sweep;
+    int n_hit;
+};
+
 /**
  * @brief Performs a Heatbath update on the entire gauge field.
  * 
@@ -13,6 +22,8 @@
  * @param beta The inverse coupling constant.
  * @param rng Random number generator.
  */
-void heatbath_update(GaugeField& field, const Geometry& geo, double beta, std::mt19937_64& rng);
+void heatbath_update(GaugeField& field, const Geometry& geo, double beta, std::mt19937_64& rng, const HBParams& params);
+
+
 
 #endif
