@@ -223,3 +223,40 @@ void ecmc_sample(LocalChainState& state, GaugeField& field, double beta, Distrib
         }
     }
 }
+
+void solve_reject_fast(double A, double B, double& gamma, double& reject, int epsilon) {
+    // Change A depending on epsilon
+    A = (epsilon == -1) ? -A : A;
+
+    // std::hypot est souvent mieux vectorisé par SVML
+    double R = std::hypot(A, B);
+    double invR = 1.0 / R;
+    double period = 2.0 * R;
+
+    double discarded_number = std::floor(gamma / period);
+    gamma -= discarded_number * period;
+
+    double phi = std::atan2(-A, B);
+    phi += (phi < 0.0) ? (2.0 * M_PI) : 0.0;
+
+    double alpha;
+    double p1 = R - A;
+
+    // Le compilateur Intel transforme ce bloc en "masking" SIMD
+    if (phi < (M_PI * 0.5) || phi > (M_PI * 1.5)) {
+        alpha = (gamma > p1) ? (gamma - p1) * invR - 1.0 : (gamma + A) * invR;
+    } else {
+        alpha = gamma * invR - 1.0;
+    }
+
+    // Clamp (std::clamp est vectorisable en C++17, ou version manuelle)
+    alpha = (alpha > 1.0) ? 1.0 : ((alpha < -1.0) ? -1.0 : alpha);
+
+    double theta = phi + std::asin(alpha);
+
+    // Normalisation 2*PI sans if/else
+    theta += (theta < 0.0) ? (2.0 * M_PI) : 0.0;
+    theta -= (theta >= 2.0 * M_PI) ? (2.0 * M_PI) : 0.0;
+
+    reject = theta + 2.0 * M_PI * discarded_number;
+}

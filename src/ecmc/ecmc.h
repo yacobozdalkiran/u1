@@ -7,6 +7,9 @@
 #include "../field/field.h"
 #include "../geometry/geometry.h"
 
+/**
+ * @brief Structure to store ECMC params.
+ */
 struct ECMCParams {
     double theta_sample = 100;
     double theta_refresh = 50;
@@ -14,7 +17,9 @@ struct ECMCParams {
     double eta = 1e-6;  // Only if algo=1
 };
 
-// Saves the state of a local Event-Chain
+/**
+ * @brief Structure to store ECMC chain state for persistence.
+ */
 struct LocalChainState {
     int site;
     int mu;
@@ -29,6 +34,9 @@ struct LocalChainState {
     size_t lift_counter = 0;
 };
 
+/**
+ * @brief Structure to store ECMC distributions.
+ */
 struct Distributions {
     std::uniform_int_distribution<int> random_dir;
     std::uniform_int_distribution<int> random_eps;
@@ -36,64 +44,66 @@ struct Distributions {
     Distributions() : random_dir(0, 1), random_eps(0, 1) {};
 };
 
-#pragma omp declare simd
-inline void solve_reject_fast(double A, double B, double& gamma, double& reject, int epsilon) {
-    // Change A depending on epsilon
-    A = (epsilon == -1) ? -A : A;
+/**
+ * @brief Optimized function to solve the reject equation.
+ */
+void solve_reject_fast(double A, double B, double& gamma, double& reject, int epsilon);
 
-    // std::hypot est souvent mieux vectorisé par SVML
-    double R = std::hypot(A, B);
-    double invR = 1.0 / R;
-    double period = 2.0 * R;
-
-    double discarded_number = std::floor(gamma / period);
-    gamma -= discarded_number * period;
-
-    double phi = std::atan2(-A, B);
-    phi += (phi < 0.0) ? (2.0 * M_PI) : 0.0;
-
-    double alpha;
-    double p1 = R - A;
-
-    // Le compilateur Intel transforme ce bloc en "masking" SIMD
-    if (phi < (M_PI * 0.5) || phi > (M_PI * 1.5)) {
-        alpha = (gamma > p1) ? (gamma - p1) * invR - 1.0 : (gamma + A) * invR;
-    } else {
-        alpha = gamma * invR - 1.0;
-    }
-
-    // Clamp (std::clamp est vectorisable en C++17, ou version manuelle)
-    alpha = (alpha > 1.0) ? 1.0 : ((alpha < -1.0) ? -1.0 : alpha);
-
-    double theta = phi + std::asin(alpha);
-
-    // Normalisation 2*PI sans if/else
-    theta += (theta < 0.0) ? (2.0 * M_PI) : 0.0;
-    theta -= (theta >= 2.0 * M_PI) ? (2.0 * M_PI) : 0.0;
-
-    reject = theta + 2.0 * M_PI * discarded_number;
-}
-
+/**
+ * @brief Computes the values of the 2 plaquettes attached to a link.
+ */
 void compute_plaquettes(const GaugeField& field, const Geometry& geo, int site, int mu,
                         std::array<double, 2>& list_plaquettes);
+
+/**
+ * @brief Computes the values of the reject angles for each plaquette attached to a link.
+ */
 void compute_reject_angles_fast(const std::array<double, 2>& list_plaquettes, int epsilon,
                                 const double& beta, std::array<double, 2>& reject_angles,
                                 std::mt19937_64& rng);
+
+/**
+ * @brief Uses the tower of probability method to choose an index in a length 3 array.
+ */
 size_t selectVariable_norev(const std::array<double, 3>& probas, std::mt19937_64& rng);
 
+/**
+ * @brief Lift without backtracking from a link.
+ */
 std::pair<std::pair<int, int>, int> lift_improved_fast_norev(const GaugeField& field,
                                                              const Geometry& geo, int site, int mu,
                                                              int j, std::mt19937_64& rng);
 
-// Nouvelles fonctions pour le lifting topologique
+/**
+ * @brief Returns the bistochastic version of a 4x4 matrix.
+ */
 void sinkhorn_knopp(double W[4][4], int iterations = 15);
+
+/**
+ * @brief Returns the sum of the absolute value of local topological charge of the 2 plaquettes attached to a link normalized to [0,1].
+ */
 double get_topological_variation(const GaugeField& field, const Geometry& geo, int site, int mu);
+
+/**
+ * @brief Performs a topology-driven lift from a link.
+ */
 std::pair<std::pair<int, int>, int> lift_topological(const GaugeField& field, const Geometry& geo,
                                                      int site, int mu, int j,
                                                      const ECMCParams& params,
                                                      std::mt19937_64& rng);
 
+/**
+ * @brief Updates a link.
+ */
 void update(GaugeField& field, int site, int mu, double theta, int epsilon);
+
+/**
+ * @brief Selects a random site in the lattice.
+ */
 int random_site(const Geometry& geo, std::mt19937_64& rng);
+
+/**
+ * @brief Performs the ECMC algorithm until theta_sample is reached.
+ */
 void ecmc_sample(LocalChainState& state, GaugeField& field, double beta, Distributions& d,
                  const Geometry& geo, const ECMCParams& params, std::mt19937_64& rng);
