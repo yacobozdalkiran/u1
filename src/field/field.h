@@ -23,6 +23,8 @@ class GaugeField{
         void add_to_link(int site, int mu, double value);
         //Plaquette/Staples
         double plaquette(const Geometry& geo, int site) const;
+        //Returns the pahse of the forward or backward plaquette of link (site, mu)
+        double plaquette_phi(const Geometry& geo, int site, int mu, bool forward) const;
 };
 
 #endif

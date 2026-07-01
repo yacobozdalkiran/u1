@@ -31,7 +31,7 @@ void compute_reject_angles_fast(const std::array<double, 2>& list_plaquettes, in
     static std::uniform_real_distribution<double> unif01_g(0.0, 1.0);
     for (int i = 0; i < 2; i++) {
         double gamma = -std::log(1.0 - unif01_g(rng));
-        double A = -epsilon * beta * std::cos(list_plaquettes[i]);
+        double A = - epsilon * beta * std::cos(list_plaquettes[i]);
         double B = epsilon * beta * std::sin(list_plaquettes[i]);
         solve_reject_fast(A, B, gamma, reject_angles[i], epsilon);
     }
@@ -261,23 +261,21 @@ void algo2::compute_plaquettes(const GaugeField& field, const Geometry& geo, int
                                std::array<double, 4>& list_plaquettes) {
     int site_right = geo.get_neighbor(site, 0, pos);
     int site_top = geo.get_neighbor(site, 1, pos);
-    int site_left = geo.get_neighbor(site, 0, neg);
     int site_bottom = geo.get_neighbor(site, 1, neg);
-    list_plaquettes[0] = field.plaquette(geo, site_right);
-    list_plaquettes[1] = field.plaquette(geo, site_top);
-    list_plaquettes[2] = field.plaquette(geo, site_left);
-    list_plaquettes[3] = field.plaquette(geo, site_bottom);
+    list_plaquettes[0] = field.plaquette_phi(geo, site_right, 1, true);
+    list_plaquettes[1] = field.plaquette_phi(geo, site_top, 0, true);
+    list_plaquettes[2] = field.plaquette_phi(geo, site, 1, false);
+    list_plaquettes[3] = field.plaquette_phi(geo, site, 0, false);
 }
 
 void algo2::compute_reject_angles_fast(const std::array<double, 4>& list_plaquettes,
                                        const double& beta, std::array<double, 4>& reject_angles,
                                        std::mt19937_64& rng, int epsilon) {
     static std::uniform_real_distribution<double> unif01_g(0.0, 1.0);
-    std::array<double, 4> coeffs_plaquette = {-1.0, 1.0, 1.0, -1.0};
     for (int i = 0; i < 4; i++) {
         double gamma = -std::log(1.0 - unif01_g(rng));
-        double A = -beta * std::cos(list_plaquettes[i]);
-        double B = epsilon * coeffs_plaquette[i] * beta * std::sin(list_plaquettes[i]);
+        double A = - epsilon * beta * std::cos(list_plaquettes[i]);
+        double B = epsilon * beta * std::sin(list_plaquettes[i]);
         solve_reject_fast(A, B, gamma, reject_angles[i], epsilon);
     }
 }
@@ -403,7 +401,6 @@ void algo2::solve_reject_fast(double A, double B, double& gamma, double& reject,
         alpha = gamma * invR - 1.0;
     }
 
-    // Clamp (std::clamp est vectorisable en C++17, ou version manuelle)
     alpha = (alpha > 1.0) ? 1.0 : ((alpha < -1.0) ? -1.0 : alpha);
 
     double theta = phi + std::asin(alpha);
